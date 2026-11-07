@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 
 from .config import Book, Chapter, Appendix, TOOL_ROOT
+from .ingest import source_images
 
 PLACEHOLDER = re.compile(r"\{\{\s*([\w.]+)\s*\}\}")
 
@@ -107,6 +108,25 @@ def prereq_text(nums: list[int]) -> str:
     return "Chapters " + ", ".join(map(str, nums[:-1])) + f", and {nums[-1]}."
 
 
+def chapter_images(book: Book, sids: list[str]) -> list[dict]:
+    seen, out = set(), []
+    for sid in sids:
+        p = book.path(book.source_path(sid))
+        if not p.exists():
+            continue
+        for img in source_images(book, sid, p.read_text(encoding="utf-8")):
+            if img["exists"] and img["path"] not in seen:
+                seen.add(img["path"])
+                out.append({**img, "source": sid})
+    return out
+
+
+def image_list(book: Book, sids: list[str]) -> str:
+    imgs = chapter_images(book, sids)
+    return bullets((f"`{i['path']}` (from `{i['source']}`): {i['alt'] or 'no alt text; describe it from the surrounding source text'}"
+                    for i in imgs), "None in the assigned sources. Use Mermaid diagrams only.")
+
+
 def chapter_values(book: Book, ch: Chapter) -> dict:
     sections = book.rules["sections"][ch.template]
     prev = book.chapter(ch.number - 1) if ch.number > 1 else None
@@ -123,6 +143,7 @@ def chapter_values(book: Book, ch: Chapter) -> dict:
         "chapter.sections": "\n".join(f"{i}. `## {s}`" for i, s in enumerate(sections, 1)),
         "chapter.prereqs": prereq_line,
         "chapter.sources": bullets(f"`{book.source_path(s)}`" for s in ch.sources),
+        "chapter.images": image_list(book, ch.sources),
         "chapter.previous": chapter_ref(book, prev.number) if prev else "None (this is the first chapter).",
         "chapter.next": chapter_ref(book, nxt.number) if nxt else "None (this is the last chapter).",
         "part.number": ch.part.number,
@@ -136,6 +157,7 @@ def appendix_values(book: Book, a: Appendix) -> dict:
         "appendix.title": a.title,
         "appendix.path": a.path,
         "appendix.brief": a.brief or "Write a useful reference appendix that fits the title.",
+        "appendix.images": image_list(book, a.sources),
         "appendix.sources": bullets((f"`{book.source_path(s)}`" for s in a.sources), "Use any source in the inventory, plus the written chapters."),
     }
 

@@ -7,7 +7,7 @@ import shutil
 import sys
 import urllib.request
 
-from . import briefs, build, checks, ingest
+from . import briefs, build, checks, gaps, ingest
 from .config import Book, ConfigError, TOOL_ROOT
 from .ingest import word_count
 
@@ -58,7 +58,8 @@ def cmd_check(args):
 def cmd_status(args):
     book = Book(args.book)
     print(f"{book.data['title']}: {len(book.parts)} parts, {len(book.chapters)} chapters, {len(book.source_ids())} sources\n")
-    print(f"{'#':>3}  {'state':<9} {'words':>6}  {'issues':>6}  {'review':<6}  title")
+    found = gaps.collect(book)
+    print(f"{'#':>3}  {'state':<9} {'words':>6}  {'issues':>6}  {'gaps':>4}  {'review':<6}  title")
     for ch in book.chapters:
         p = book.path(ch.path)
         r = checks.Report()
@@ -66,10 +67,11 @@ def cmd_status(args):
         words = word_count(p.read_text(encoding="utf-8")) if p.exists() else 0
         state = "missing" if not p.exists() else ("ok" if r.ok else "failing")
         review = "yes" if book.path(f"build/reports/ch{ch.number:02d}-grounding.md").exists() else "-"
-        print(f"{ch.number:>3}  {state:<9} {words:>6}  {len(r.errors):>6}  {review:<6}  {ch.title}")
+        ngaps = len(found.get(f"Chapter {ch.number}: {ch.title}", []))
+        print(f"{ch.number:>3}  {state:<9} {words:>6}  {len(r.errors):>6}  {ngaps:>4}  {review:<6}  {ch.title}")
     for a in book.appendices:
         state = "generated" if a.generate else ("ok" if book.path(a.path).exists() else "missing")
-        print(f"  {a.id}  {state:<9} {'':>6}  {'':>6}  {'':<6}  Appendix {a.id}: {a.title}")
+        print(f"  {a.id}  {state:<9} {'':>6}  {'':>6}  {'':>4}  {'':<6}  Appendix {a.id}: {a.title}")
     return 0
 
 
@@ -82,6 +84,17 @@ def cmd_build(args):
             print("fix the errors above or pass --skip-check")
             return 1
     build.run(book, args.formats or list(build.FORMATS))
+    return 0
+
+
+def cmd_gaps(args):
+    book = Book(args.book)
+    found = gaps.run(book, args.chapter)
+    for label, items in found.items():
+        print(label)
+        for rel, line, text in items:
+            print(f"  {rel}:{line}: {text[:110]}{'...' if len(text) > 110 else ''}")
+    print(f"{sum(len(v) for v in found.values())} gap(s) -> build/gaps.md")
     return 0
 
 
@@ -141,6 +154,8 @@ def main(argv=None) -> int:
     b = sub.add_parser("build", help="build epub, html, and/or pdf into dist/")
     b.add_argument("formats", nargs="*", help="epub html pdf (default: all)")
     b.add_argument("--skip-check", action="store_true")
+    g = sub.add_parser("gaps", help="list the places writers said the sources fall short (build/gaps.md)")
+    g.add_argument("--chapter", type=int)
     d = sub.add_parser("diagrams", help="render every mermaid diagram to catch syntax errors early")
     d.add_argument("--chapter", type=int)
     sub.add_parser("cover", help="render the cover image")

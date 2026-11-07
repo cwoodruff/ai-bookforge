@@ -17,6 +17,8 @@ brewlog --version
 
 The first run creates a journal folder at `~/.brewlog/`. Inside it, `journal.jsonl` holds one JSON object per brew, and `config.toml` holds your settings.
 
+![The journal folder Brewlog creates on first run](images/journal-folder.svg)
+
 ## Core ideas
 
 - A **brew** is one cup or pot: a method, a bean, a dose in grams, a water weight in grams, a grind setting, a water temperature, a brew time, and a rating from 1 to 5.

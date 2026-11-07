@@ -26,7 +26,7 @@ The book is written from the author's source material in `sources/`. The invento
 
 - Every specific fact (names, numbers, versions, commands, flags, file names, config keys, API names, dates, quotes) must come from your assigned sources. Never invent one.
 - You may add general, widely known background a competent expert would not dispute (what HTTP is, what a loop does). Keep it brief.
-- If the chapter needs something the sources do not cover, either leave it out or put it in a callout that says so: `> **Note:** The source material doesn't cover X; ...`. Never paper over a gap with a plausible guess.
+- If the chapter needs something the sources do not cover, either leave it out or flag it in a callout that starts with these exact words: `> **Note:** The source material doesn't cover ...`. Never paper over a gap with a plausible guess. These notes are collected by `forge gaps` so the author can fill them (for example with `/interview`), so keep the wording exact and say precisely what is missing.
 - If two sources disagree, say so in the text and follow the more specific or more recent one.
 - Write original prose. Use the sources as research, not as text to paste. Reproduce commands, code, and config exactly; never paraphrase those.
 
@@ -60,6 +60,13 @@ Optionally end with `## Further Reading` when the sources mention external links
 - At least {{targets.min_diagrams}} diagrams per chapter, written inline as fenced `mermaid` blocks. The build renders them to images.
 - Use `flowchart`, `sequenceDiagram`, `stateDiagram-v2`, or `classDiagram`. Quote labels that contain punctuation: `A["run the command"]`. No HTML in labels.
 - Validate before you finish: `python3 -m forge{{book_flag}} diagrams --chapter N`.
+
+## Images
+
+- Only use images listed in your brief. They come from the author's sources, and paths are relative to the book folder (`sources/...`).
+- Every image gets a caption (the alt text) that says what the reader should notice.
+- Don't describe details in an image that its source doesn't explain; you can't verify them.
+- An image doesn't count toward the diagram minimum; that is about Mermaid diagrams.
 
 ## Callouts
 

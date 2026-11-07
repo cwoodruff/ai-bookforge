@@ -9,6 +9,7 @@ from pathlib import Path
 import yaml
 
 TOOL_ROOT = Path(__file__).resolve().parent.parent
+IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 
 
 class ConfigError(Exception):
@@ -181,6 +182,13 @@ class Book:
         if not src.is_dir():
             return []
         return sorted(str(p.relative_to(src).with_suffix("")) for p in src.rglob("*.md"))
+
+    def source_images(self) -> list[str]:
+        """Every image file under sources/, as a path relative to the book folder."""
+        src = self.root / "sources"
+        if not src.is_dir():
+            return []
+        return sorted(str(p.relative_to(self.root)) for p in src.rglob("*") if p.suffix.lower() in IMAGE_EXTS)
 
     def source_path(self, sid: str) -> str:
         return f"sources/{sid}.md"

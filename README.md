@@ -39,11 +39,36 @@ Then, inside Claude Code:
 | 1 | `/outline` | Inventories `sources/` and proposes parts, chapters, and which sources feed each chapter. **Stops for your review.** |
 | 2 | (you) | Edit the `parts:` section of `book.yaml` until the outline is right. |
 | 3 | `/write-all` | One writer agent per chapter, in parallel, each following its brief. Failing chapters are retried once. |
+| 3b | `/interview 2 5` | Optional: answers the gaps the writers flagged, then `/write 2 5` again. |
 | 4 | `/review` | A fact-checker agent compares each chapter against its sources and writes `build/reports/chNN-grounding.md`. |
 | 5 | `/edit` | Editor agents reconcile cross-references, terminology, and duplicated teaching, and apply the review fixes. |
 | 6 | `/build` | Runs every check, then writes `dist/<slug>.epub`, `.html`, and `.pdf`. |
 
 `/write 3 5-7` rewrites specific chapters. `make status` shows progress at any point.
+
+## How you give it information
+
+You never paste content into the chat. Everything lives in files in the book folder:
+
+| Where | What goes there |
+|---|---|
+| `sources/**.md` | The facts: notes, docs, specs, transcripts, drafts. The only place writers may take specific facts from. |
+| `sources/**` images | Screenshots and figures (`.png`, `.jpg`, `.svg`, `.gif`, `.webp`). Reference each one from the source it belongs with, e.g. `![The settings page](images/settings.png)`. Writers can then use it in that source's chapter. |
+| `book.yaml` (top) | Audience, voice, house rules, terminology, glossary, running example, cover |
+| `book.yaml` (`parts:`) | The outline, proposed by `/outline` and edited by you |
+| `book/front/*.md` | A preface or foreword in your own words |
+
+Other formats need converting first, for example `pandoc notes.docx -o sources/notes.md`.
+
+### When your knowledge isn't written down
+
+`/interview` asks you questions and saves your answers, lightly edited, as new source files under `sources/interviews/`. Answering by dictation works fine. It has three modes:
+
+- `/interview kickoff`: before outlining, walks you through the book's topics to create source material from scratch.
+- `/interview 4 7`: after a draft, asks about the gaps the writers flagged in Chapters 4 and 7, adds the answers to those chapters' sources, and suggests `/write 4 7`.
+- `/interview "deployment to Azure"`: one topic, filed with the chapter you choose.
+
+Writers flag missing material with `> **Note:** The source material doesn't cover ...`. `make gaps` collects every one of those into `build/gaps.md`, and `make status` shows a gap count per chapter. That gap list is what the interview works from.
 
 To see a finished result first, build the example: `make all BOOK=examples/tiny-book`.
 
@@ -96,6 +121,7 @@ Chapters are numbered continuously across parts. Change the outline and run `mak
 
 - A source that isn't assigned to any chapter, or a chapter that names a missing source
 - A missing chapter or solutions file, or the wrong chapter title
+- An image path in a chapter that doesn't exist
 - Required sections missing or out of order (from the profile's `rules.yaml`)
 - A missing prerequisites callout
 - Fewer diagrams than `targets.min_diagrams`, or a diagram that won't render
@@ -127,6 +153,7 @@ To customize, copy `profiles/technical-handson/` to `profiles/<name>/` (in this 
 | `make briefs` | `briefs` | Render the manifest, style guide, and briefs |
 | `make check` | `check [--chapter N] [--coverage]` | Run the deterministic checks |
 | `make status` | `status` | Show per-chapter state, word count, issues, and review status |
+| `make gaps` | `gaps [--chapter N]` | List every place a writer said the sources fall short |
 | `make diagrams` | `diagrams [--chapter N]` | Render every Mermaid diagram to catch errors |
 | `make epub` / `html` / `pdf` / `all` | `build [formats] [--skip-check]` | Build into `dist/` |
 | `make cover` | `cover` | Render the cover only |

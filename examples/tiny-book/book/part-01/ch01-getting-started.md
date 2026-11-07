@@ -46,18 +46,13 @@ The first run of Brewlog creates a journal folder at `~/.brewlog/`. Everything B
 | `journal.jsonl` | One JSON object per brew, one per line |
 | `config.toml` | Your settings |
 
-The `.jsonl` extension means "JSON Lines": each line of the file is a complete JSON object on its own. That format suits a journal well. Adding a brew means adding a line at the end, and a program can read the file one line at a time without loading a single giant document.
+![The journal folder Brewlog creates on first run: both files sit side by side in `~/.brewlog/`, and `journal.jsonl` only ever grows, because brews are appended and never rewritten](sources/images/journal-folder.svg)
+
+The `.jsonl` extension means "JSON Lines": each line of the file is a complete JSON object on its own. That format suits a journal well. Adding a brew means adding a line at the end, and a program can read the file one line at a time without loading a single giant document. The note in the picture, "appended, never rewritten," is the journal's most important rule; "How a Brew Is Recorded" later in this chapter explains it.
 
 `config.toml` is where your personal defaults go, such as the method you use most. You don't need to touch it yet. Chapter 3 explains every setting it accepts and how settings interact.
 
 > **Note:** The source material doesn't say what fields a line in `journal.jsonl` contains or what they are named, so this book doesn't show a sample line. Treat the file as Brewlog's to write; you read your brews back through Brewlog's own commands in Chapter 2.
-
-```mermaid
-flowchart TD
-    Home["Your home folder"] --> Folder["~/.brewlog/"]
-    Folder --> Journal["journal.jsonl: one JSON object per brew"]
-    Folder --> Config["config.toml: your settings"]
-```
 
 ## Core Ideas: Brew, Bean, Method, and Ratio
 

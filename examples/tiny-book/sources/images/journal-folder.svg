@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" width="640" height="300" font-family="Helvetica, Arial, sans-serif">
+  <rect width="640" height="300" fill="#fffaf3"/>
+  <path d="M40 60 h120 l20 24 h220 v170 h-360 z" fill="#f3d9b1" stroke="#7c4a1e" stroke-width="3"/>
+  <text x="56" y="52" font-size="22" fill="#3b1f0e" font-weight="bold">~/.brewlog/</text>
+  <rect x="80" y="110" width="280" height="54" rx="6" fill="#fff" stroke="#7c4a1e" stroke-width="2"/>
+  <text x="96" y="143" font-size="20" fill="#3b1f0e" font-family="Menlo, monospace">journal.jsonl</text>
+  <rect x="80" y="180" width="280" height="54" rx="6" fill="#fff" stroke="#7c4a1e" stroke-width="2"/>
+  <text x="96" y="213" font-size="20" fill="#3b1f0e" font-family="Menlo, monospace">config.toml</text>
+  <line x1="360" y1="137" x2="420" y2="137" stroke="#b45309" stroke-width="2"/>
+  <text x="428" y="132" font-size="16" fill="#3b1f0e">one JSON object per brew,</text>
+  <text x="428" y="152" font-size="16" fill="#3b1f0e">appended, never rewritten</text>
+  <line x1="360" y1="207" x2="420" y2="207" stroke="#b45309" stroke-width="2"/>
+  <text x="428" y="212" font-size="16" fill="#3b1f0e">your settings</text>
+</svg>

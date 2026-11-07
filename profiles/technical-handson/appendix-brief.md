@@ -16,6 +16,10 @@ You are writing a reference appendix for **{{book.title}}** by {{book.author}}.
 
 {{appendix.sources}}
 
+## Images you may use
+
+{{appendix.images}}
+
 ## You own
 
 - `{{appendix.path}}`, which must begin with `# Appendix {{appendix.id}}: {{appendix.title}}` and use H2/H3 below it.

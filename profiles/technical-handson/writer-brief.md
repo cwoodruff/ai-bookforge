@@ -22,6 +22,12 @@ You are writing one chapter of **{{book.title}}** by {{book.author}}. Other writ
 
 {{chapter.sources}}
 
+## Images you may use
+
+{{chapter.images}}
+
+Use an image where it teaches better than words, with a caption that says what to notice: `![The journal folder after the first run](sources/images/folder.png)`. Use these paths exactly. Never reference an image that isn't listed here.
+
 Use other files in `sources/` only to check consistency, not as material for this chapter (they belong to other chapters).
 
 ## Required H2 sections, in this order

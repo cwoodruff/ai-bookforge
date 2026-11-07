@@ -11,3 +11,5 @@ th { background: #ede9fe; }
 img { max-width: 100%; }
 img.diagram { display: block; margin: 1em auto; max-height: 34em; }
 dt { font-weight: bold; margin-top: .6em; }
+figure { margin: 1em 0; text-align: center; }
+figcaption { font-size: .88em; font-style: italic; color: #444; margin-top: .3em; }

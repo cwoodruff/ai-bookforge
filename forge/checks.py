@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass, field
 
 from .config import Book, Chapter
-from .ingest import strip_code, word_count
+from .ingest import image_refs, source_images, strip_code, word_count
 
 CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
@@ -49,6 +49,16 @@ def check_coverage(book: Book, r: Report) -> None:
     if book.chapters:
         for s in sorted(inventory - used - excluded):
             r.err("coverage", f"source '{s}' is not assigned to any chapter (assign it or list it under exclude_sources)")
+    referenced = set()
+    for sid in inventory:
+        text = book.path(book.source_path(sid)).read_text(encoding="utf-8")
+        for img in source_images(book, sid, text):
+            referenced.add(img["path"])
+            if not img["exists"]:
+                r.warn("sources", f"{book.source_path(sid)} references a missing image {img['path']}")
+    for img in book.source_images():
+        if img not in referenced:
+            r.warn("sources", f"{img} is not referenced by any source, so no chapter can use it")
     for s in sorted(excluded - inventory):
         r.warn("coverage", f"exclude_sources lists '{s}', which does not exist")
 
@@ -105,7 +115,23 @@ def check_chapter(book: Book, ch: Chapter, r: Report) -> None:
                 r.err(where, f"{ch.solution_path} must start with '# Chapter {ch.number} Solutions'")
             if "Quiz" in " ".join(rules["sections"][ch.template]) and "## Quiz Answers" not in st:
                 r.err(where, f"{ch.solution_path} has no '## Quiz Answers' section")
+    check_images(book, where, text, ch.sources, r)
     check_refs(book, where, body, r)
+
+
+def check_images(book: Book, where: str, text: str, sids: list[str], r: Report) -> None:
+    allowed = set()
+    for sid in sids:
+        p = book.path(book.source_path(sid))
+        if p.exists():
+            allowed |= {i["path"] for i in source_images(book, sid, p.read_text(encoding="utf-8"))}
+    for alt, target in image_refs(text):
+        if not book.path(target).is_file():
+            r.err(where, f"image '{target}' does not exist (paths are relative to the book folder, e.g. sources/images/x.png)")
+        elif target not in allowed:
+            r.warn(where, f"image '{target}' is not referenced by this chapter's assigned sources")
+        if not alt:
+            r.warn(where, f"image '{target}' has no caption (alt text)")
 
 
 def check_refs(book: Book, where: str, body: str, r: Report) -> None:
@@ -132,6 +158,7 @@ def check_appendices(book: Book, r: Report) -> None:
         text = p.read_text(encoding="utf-8")
         if not text.startswith(f"# Appendix {a.id}:"):
             r.err(f"appendix {a.id}", f"first line must be '# Appendix {a.id}: {a.title}'")
+        check_images(book, f"appendix {a.id}", text, a.sources or book.source_ids(), r)
         check_refs(book, f"appendix {a.id}", strip_code(text), r)
 
 

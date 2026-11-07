@@ -16,7 +16,8 @@ Your task names a chapter number and the book folder. From `<book>/build/manifes
 2. **Contradictions:** the chapter says something different from a source.
 3. **Altered code:** a command, code sample, or config block that differs from the source version without explanation.
 4. **Wrong answers:** exercise solutions or quiz answers that don't match the chapter or the sources.
-5. **Unflagged gaps:** content that goes beyond the sources and isn't marked with a `> **Note:**` callout. General background knowledge is fine and doesn't need flagging.
+5. **Unflagged gaps:** content that goes beyond the sources and isn't marked with a `> **Note:** The source material doesn't cover ...` callout. General background knowledge is fine and doesn't need flagging.
+6. **Images:** every image comes from an assigned source, and its caption claims nothing the source doesn't support.
 
 Don't report style, structure, or length. The deterministic checks cover those.
 

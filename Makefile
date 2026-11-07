@@ -1,7 +1,7 @@
 # AI Book Forge. BOOK is the folder holding book.yaml (default: this repo).
 BOOK ?= .
 FORGE := python3 -m forge --book $(BOOK)
-.PHONY: init ingest briefs check status diagrams epub html pdf all cover links test clean
+.PHONY: init ingest briefs check status gaps diagrams epub html pdf all cover links test clean
 
 init:   ; python3 -m forge --book $(BOOK) init
 ingest: ; $(FORGE) ingest
@@ -12,6 +12,7 @@ epub:   ; $(FORGE) build epub
 html:   ; $(FORGE) build html
 pdf:    ; $(FORGE) build pdf
 all:    ; $(FORGE) build epub html pdf
+gaps:   ; $(FORGE) gaps
 diagrams: ; $(FORGE) diagrams
 cover:  ; $(FORGE) cover
 links:  ; $(FORGE) links

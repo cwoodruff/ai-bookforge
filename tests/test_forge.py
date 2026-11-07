@@ -9,7 +9,7 @@ from pathlib import Path
 
 import yaml
 
-from forge import briefs, build, checks, ingest
+from forge import briefs, build, checks, gaps, ingest
 from forge.config import Book, ConfigError, TOOL_ROOT, slugify
 
 EXAMPLE = TOOL_ROOT / "examples" / "tiny-book"
@@ -220,6 +220,75 @@ class GeneratedAppendixTests(TempBook):
         text = (self.tmp / book.appendices[0].path).read_text()
         self.assertIn("## Chapter 1: Intro", text)
         self.assertIn("1. Yes.", text)
+
+
+PNG = bytes.fromhex("89504e470d0a1a0a0000000d4948445200000001000000010806000000"
+                    "1f15c4890000000d49444154789c6300010000000500010d0a2db40000000049454e44ae426082")
+
+
+class ImageTests(TempBook):
+    def setUp(self):
+        super().setUp()
+        make_book(self.tmp)
+        (self.tmp / "sources/img").mkdir()
+        (self.tmp / "sources/img/a.png").write_bytes(PNG)
+        src = self.tmp / "sources/intro.md"
+        src.write_text(src.read_text() + "\n![A diagram](img/a.png)\n\n```markdown\n![not real](img/none.png)\n```\n")
+
+    def test_ingest_resolves_paths_and_skips_code(self):
+        items = ingest.run(Book(self.tmp))
+        self.assertEqual(items[0]["images"], [{"path": "sources/img/a.png", "alt": "A diagram", "exists": True}])
+
+    def test_brief_lists_images(self):
+        briefs.run(Book(self.tmp))
+        self.assertIn("`sources/img/a.png`", (self.tmp / "build/briefs/ch01.md").read_text())
+
+    def test_chapter_image_must_exist(self):
+        write_chapter(self.tmp, CHAPTER.replace("Done.", "![Missing](sources/img/b.png)"))
+        self.assertTrue(any("does not exist" in e for e in checks.run(Book(self.tmp)).errors))
+
+    def test_chapter_image_from_sources_passes(self):
+        write_chapter(self.tmp, CHAPTER.replace("Done.", "![A diagram](sources/img/a.png)"))
+        r = checks.run(Book(self.tmp))
+        self.assertEqual(r.errors, [])
+        self.assertFalse(any("image" in w for w in r.warnings))
+
+    def test_unreferenced_source_image_warns(self):
+        (self.tmp / "sources/img/loose.png").write_bytes(PNG)
+        r = checks.run(Book(self.tmp), coverage_only=True)
+        self.assertTrue(any("loose.png" in w for w in r.warnings))
+
+
+class GapTests(unittest.TestCase):
+    def test_finds_source_gap_notes_only(self):
+        text = textwrap.dedent("""\
+            > **Note:** The source material doesn't cover the default port.
+
+            > **Note:** This tool is fictional.
+
+            > **Tip:** The sources don't say, but try it.
+
+            > **Note:** The sources say "first run" but don't say
+            > whether `--version` counts.
+
+            ```markdown
+            > **Note:** The source material doesn't cover code blocks.
+            ```
+            """)
+        found = gaps.find(text)
+        self.assertEqual([line for line, _ in found], [1, 7])
+        self.assertIn("whether `--version` counts", found[1][1])
+
+    def test_example_gaps_written(self):
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            dest = tmp / "book"
+            shutil.copytree(EXAMPLE, dest, ignore=shutil.ignore_patterns("build", "dist"))
+            found = gaps.run(Book(dest))
+            self.assertTrue(found)
+            self.assertTrue((dest / "build/gaps.md").exists())
+        finally:
+            shutil.rmtree(tmp)
 
 
 class ExampleBookTests(unittest.TestCase):
