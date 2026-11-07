@@ -1,0 +1,59 @@
+# AI Book Forge configuration. Copy to book.yaml (`make init`) and fill in the top section.
+# The `parts:` section is normally written by the outliner (/outline) and then edited by you.
+
+title: "My Book Title"
+subtitle: "A Hands-On Guide"
+author: "Your Name"
+lang: en-US
+license: "CC BY 4.0"                # used for the rights line; or set `rights:` directly
+description: >
+  One or two sentences for the EPUB description and for the writers' context.
+subject: "Software development"
+profile: technical-handson          # chapter template, rules, and briefs (see profiles/)
+
+voice:
+  audience: "developers who know the basics of programming but are new to this topic"
+  person: second                    # second ("you"), first, or third
+  tone: "friendly, direct, and precise"
+  rules:
+    - "American English"
+    - "No emoji"
+    - "No em-dashes"
+  terminology:                      # preferred spelling and formatting of key terms
+    # widget: "widget (lowercase, never Widget)"
+
+targets:
+  words_per_chapter: [3000, 6000]   # outside this range is a warning, not an error
+  min_diagrams: 2                   # Mermaid diagrams per chapter (an error below this)
+
+# Optional running example that Hands-On sections build on across chapters.
+# companion_project:
+#   name: "Tasktrack"
+#   path: "sample/"
+#   description: "A small REST API the reader extends chapter by chapter."
+
+cover:
+  colors: ["#1e1b4b", "#7c3aed"]    # gradient for templates/cover.html
+  tagline: ""
+  # image: "images/cover.png"       # use your own cover instead of the template
+
+glossary: {}                        # term: definition, rendered by a `generate: glossary` appendix
+
+exclude_sources: []                 # source ids you deliberately keep out of the book
+
+appendices:
+  - { id: A, title: "Glossary", generate: glossary }
+  - { id: B, title: "Quiz Answers", generate: quiz }
+  # - { id: C, title: "Command Reference", brief: "Every command from the sources, one table per tool.", sources: [] }
+
+parts: []
+# parts:
+#   - title: "Getting Started"
+#     intro: "One or two paragraphs that open the part."
+#     chapters:
+#       - title: "What This Is and Why It Matters"
+#         slug: what-it-is           # optional; used in the file name
+#         summary: "Scope of the chapter in one to three sentences."
+#         sources: [overview, faq]   # ids from build/inventory.md (path under sources/ without .md)
+#         prereqs: []                # earlier chapter numbers the reader needs
+#         template: light            # full (default) or light

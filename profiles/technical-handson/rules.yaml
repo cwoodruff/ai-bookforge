@@ -1,0 +1,28 @@
+# technical-handson: the chapter template used for Mastering Squad, generalized.
+# `sections` lists the required H2 headings per chapter template, in order. A heading matches
+# when it starts with the listed text, so "Hands-On: Build the API" satisfies "Hands-On".
+# Free-form concept sections go between "What You'll Learn" and "Hands-On".
+
+sections:
+  full:
+    - "What You'll Learn"
+    - "Hands-On"
+    - "Quick Reference"
+    - "Under the Hood"
+    - "Pitfalls and Troubleshooting"
+    - "Summary"
+    - "Exercises"
+    - "Quiz"
+  light:                      # for opening chapters aimed at beginners
+    - "What You'll Learn"
+    - "Hands-On"
+    - "Summary"
+    - "Exercises"
+    - "Quiz"
+
+prerequisites: true           # "> **Prerequisites:** ..." callout within 6 lines of the title
+solutions: true               # solutions/chNN.md with "## Quiz Answers" is required
+
+targets:
+  words_per_chapter: [3000, 6000]
+  min_diagrams: 2

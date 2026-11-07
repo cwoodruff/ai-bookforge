@@ -1,0 +1,160 @@
+"""AI Book Forge command line. Run from the repo root: python3 -m forge <command> [--book DIR]."""
+from __future__ import annotations
+
+import argparse
+import re
+import shutil
+import sys
+import urllib.request
+
+from . import briefs, build, checks, ingest
+from .config import Book, ConfigError, TOOL_ROOT
+from .ingest import word_count
+
+
+def cmd_init(args):
+    root = TOOL_ROOT if args.book == "." else __import__("pathlib").Path(args.book).resolve()
+    target = root / "book.yaml"
+    if target.exists():
+        print(f"{target} already exists; leaving it alone")
+    else:
+        root.mkdir(parents=True, exist_ok=True)
+        shutil.copy(TOOL_ROOT / "book.yaml.example", target)
+        print(f"created {target}")
+    (root / "sources").mkdir(exist_ok=True)
+    print(f"put your markdown files in {root / 'sources'}/ and fill in book.yaml")
+    return 0
+
+
+def cmd_ingest(args):
+    book = Book(args.book)
+    items = ingest.run(book)
+    print(f"inventoried {len(items)} sources ({sum(i['words'] for i in items):,} words) -> build/inventory.md")
+    return 0 if items else 1
+
+
+def cmd_briefs(args):
+    book = Book(args.book)
+    ingest.run(book)
+    written = briefs.run(book)
+    print(f"rendered {len(written)} files into build/ (manifest, style guide, {len(book.chapters)} chapter briefs)")
+    return 0
+
+
+def print_report(r: checks.Report) -> int:
+    for w in r.warnings:
+        print(f"warning  {w}")
+    for e in r.errors:
+        print(f"ERROR    {e}")
+    print(f"{len(r.errors)} error(s), {len(r.warnings)} warning(s)")
+    return 0 if r.ok else 1
+
+
+def cmd_check(args):
+    book = Book(args.book)
+    return print_report(checks.run(book, chapter=args.chapter, coverage_only=args.coverage))
+
+
+def cmd_status(args):
+    book = Book(args.book)
+    print(f"{book.data['title']}: {len(book.parts)} parts, {len(book.chapters)} chapters, {len(book.source_ids())} sources\n")
+    print(f"{'#':>3}  {'state':<9} {'words':>6}  {'issues':>6}  {'review':<6}  title")
+    for ch in book.chapters:
+        p = book.path(ch.path)
+        r = checks.Report()
+        checks.check_chapter(book, ch, r)
+        words = word_count(p.read_text(encoding="utf-8")) if p.exists() else 0
+        state = "missing" if not p.exists() else ("ok" if r.ok else "failing")
+        review = "yes" if book.path(f"build/reports/ch{ch.number:02d}-grounding.md").exists() else "-"
+        print(f"{ch.number:>3}  {state:<9} {words:>6}  {len(r.errors):>6}  {review:<6}  {ch.title}")
+    for a in book.appendices:
+        state = "generated" if a.generate else ("ok" if book.path(a.path).exists() else "missing")
+        print(f"  {a.id}  {state:<9} {'':>6}  {'':>6}  {'':<6}  Appendix {a.id}: {a.title}")
+    return 0
+
+
+def cmd_build(args):
+    book = Book(args.book)
+    if not args.skip_check:
+        r = checks.run(book)
+        if not r.ok:
+            print_report(r)
+            print("fix the errors above or pass --skip-check")
+            return 1
+    build.run(book, args.formats or list(build.FORMATS))
+    return 0
+
+
+def cmd_diagrams(args):
+    book = Book(args.book)
+    if args.chapter:
+        files = [book.chapter(args.chapter).path]
+    else:
+        files = [ch.path for ch in book.chapters] + [a.path for a in book.appendices if not a.generate]
+    files = [f for f in files if book.path(f).exists()]
+    failures = build.validate_diagrams(book, files)
+    for f in failures:
+        print(f"ERROR    {f}")
+    print(f"{len(failures)} diagram failure(s) in {len(files)} file(s)")
+    return 1 if failures else 0
+
+
+def cmd_cover(args):
+    book = Book(args.book)
+    p = build.cover(book, required=True)
+    print(f"cover: {p.relative_to(book.root)}")
+    return 0
+
+
+def cmd_links(args):
+    book = Book(args.book)
+    urls = set()
+    for p in book.path("book").glob("**/*.md"):
+        urls |= {u.rstrip(".,;:") for u in re.findall(r"https?://[^\s)>\"`\]]+", p.read_text(encoding="utf-8"))}
+    bad = 0
+    for u in sorted(urls):
+        try:
+            req = urllib.request.Request(u, method="HEAD", headers={"User-Agent": "ai-bookforge-linkcheck"})
+            code = urllib.request.urlopen(req, timeout=15).status
+        except urllib.error.HTTPError as e:
+            code = e.code
+        except Exception:
+            code = 0
+        if code == 0 or code >= 400:
+            bad += 1
+            print(f"BROKEN {code} {u}")
+    print(f"checked {len(urls)} links, {bad} broken")
+    return 1 if bad else 0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(prog="forge", description="AI Book Forge: build AI-written books from markdown sources")
+    ap.add_argument("--book", default=".", help="folder that holds book.yaml (default: current folder)")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("init", help="create book.yaml and sources/ from the example")
+    sub.add_parser("ingest", help="inventory sources/ into build/inventory.md")
+    sub.add_parser("briefs", help="render the manifest, style guide, and writing briefs")
+    c = sub.add_parser("check", help="structure, coverage, and cross-reference checks")
+    c.add_argument("--chapter", type=int)
+    c.add_argument("--coverage", action="store_true", help="only check the source-to-chapter map")
+    sub.add_parser("status", help="per-chapter progress table")
+    b = sub.add_parser("build", help="build epub, html, and/or pdf into dist/")
+    b.add_argument("formats", nargs="*", help="epub html pdf (default: all)")
+    b.add_argument("--skip-check", action="store_true")
+    d = sub.add_parser("diagrams", help="render every mermaid diagram to catch syntax errors early")
+    d.add_argument("--chapter", type=int)
+    sub.add_parser("cover", help="render the cover image")
+    sub.add_parser("links", help="check external links in the manuscript")
+    # allow --book after the subcommand too
+    for p in sub.choices.values():
+        p.add_argument("--book", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
+    args = ap.parse_args(argv)
+    try:
+        return globals()[f"cmd_{args.cmd}"](args)
+    except (ConfigError, build.BuildError, KeyError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

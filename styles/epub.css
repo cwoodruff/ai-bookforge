@@ -1,0 +1,13 @@
+/* Shared by the EPUB, HTML, and PDF editions. Override by adding styles/epub.css to your book folder. */
+body { font-family: Georgia, "Times New Roman", serif; line-height: 1.55; max-width: 46em; margin: 0 auto; padding: 0 1em; }
+h1, h2, h3, h4 { font-family: "Helvetica Neue", Arial, sans-serif; line-height: 1.25; }
+h1 { border-bottom: 2px solid #6d28d9; padding-bottom: .2em; }
+code, pre { font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace; font-size: .88em; }
+pre { background: #f5f3ff; border-left: 4px solid #6d28d9; padding: .6em; white-space: pre-wrap; word-wrap: break-word; }
+blockquote { border-left: 4px solid #a78bfa; margin: 1em 0; padding: .3em 1em; background: #faf5ff; }
+table { border-collapse: collapse; width: 100%; font-size: .9em; }
+th, td { border: 1px solid #ccc; padding: .3em .5em; vertical-align: top; }
+th { background: #ede9fe; }
+img { max-width: 100%; }
+img.diagram { display: block; margin: 1em auto; max-height: 34em; }
+dt { font-weight: bold; margin-top: .6em; }

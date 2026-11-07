@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+/* 1600x2400 cover. Placeholders: TITLE SUBTITLE AUTHOR TAGLINE COLOR1 COLOR2 (in double braces). */
+html,body{margin:0;width:1600px;height:2400px;overflow:hidden}
+body{background:linear-gradient(160deg,{{COLOR1}} 0%,{{COLOR2}} 100%);font-family:"Helvetica Neue",Arial,sans-serif;color:#fff;position:relative}
+.grid{position:absolute;inset:0;opacity:.16;background-image:radial-gradient(#fff 2px,transparent 2px);background-size:60px 60px}
+.t{position:absolute;left:120px;right:120px}
+h1{font-size:170px;margin:0;line-height:1.02;letter-spacing:-3px}
+.sub{top:1580px;font-size:60px;font-weight:300;line-height:1.3;opacity:.92}
+.tag{bottom:250px;font-size:40px;opacity:.8}
+.au{bottom:140px;font-size:64px;font-weight:600}
+.mark{position:absolute;top:900px;left:120px;width:1360px;height:500px}
+</style></head><body><div class="grid"></div>
+<div class="t" style="top:200px"><h1>{{TITLE}}</h1></div>
+<svg class="mark" viewBox="0 0 1360 500"><g fill="none" stroke="#fff" stroke-width="10" opacity=".85">
+<rect x="180" y="60" width="300" height="380" rx="16"/><rect x="530" y="60" width="300" height="380" rx="16"/>
+<path d="M880 440 L880 76 Q880 60 896 60 L1164 60 Q1180 60 1180 76 L1180 440"/>
+<line x1="220" y1="140" x2="440" y2="140"/><line x1="220" y1="200" x2="440" y2="200"/><line x1="220" y1="260" x2="380" y2="260"/>
+<line x1="570" y1="140" x2="790" y2="140"/><line x1="570" y1="200" x2="740" y2="200"/>
+<line x1="80" y1="470" x2="1280" y2="470" stroke-width="14"/></g></svg>
+<div class="t sub">{{SUBTITLE}}</div>
+<div class="t tag">{{TAGLINE}}</div>
+<div class="t au">{{AUTHOR}}</div>
+</body></html>
