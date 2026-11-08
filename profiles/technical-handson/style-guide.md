@@ -26,7 +26,7 @@ The book is written from the author's source material in `sources/`. The invento
 
 - Every specific fact (names, numbers, versions, commands, flags, file names, config keys, API names, dates, quotes) must come from your assigned sources. Never invent one.
 - You may add general, widely known background a competent expert would not dispute (what HTTP is, what a loop does). Keep it brief.
-- If the chapter needs something the sources do not cover, either leave it out or flag it in a callout that starts with these exact words: `> **Note:** The source material doesn't cover ...`. Never paper over a gap with a plausible guess. These notes are collected by `forge gaps` so the author can fill them (for example with `/interview`), so keep the wording exact and say precisely what is missing.
+- If the chapter needs something the sources do not cover, either leave it out or flag it in a callout that starts with these exact words: `> **Note:** The source material doesn't cover ...`. Never paper over a gap with a plausible guess. These notes are collected by `forge gaps` so the author can fill them (for example with `/interview`), so keep the wording exact and say precisely what is missing. Each gap note must stand alone: release builds can leave gap notes out, so never refer to one from the body text ("as the note above says"). Repeat the point in a sentence instead.
 - If two sources disagree, say so in the text and follow the more specific or more recent one.
 - Write original prose. Use the sources as research, not as text to paste. Reproduce commands, code, and config exactly; never paraphrase those.
 

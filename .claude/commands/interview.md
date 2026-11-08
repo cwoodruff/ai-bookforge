@@ -53,4 +53,4 @@ Rules for the answers:
 
 ## 5. Next step
 
-Say which files you wrote and how many answers they hold, then suggest the next step: `/outline` after a kickoff, or `/write N` (then `/review N`) for the chapters whose gaps you filled.
+Say which files you wrote and how many answers they hold, then suggest the next step: `/outline` after a kickoff, or `/revise N` (then `/review N`) for the chapters whose gaps you filled. Adding the interview file to a chapter's sources marks it stale, so `/revise` with no arguments picks it up.

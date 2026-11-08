@@ -116,7 +116,22 @@ def check_chapter(book: Book, ch: Chapter, r: Report) -> None:
             if "Quiz" in " ".join(rules["sections"][ch.template]) and "## Quiz Answers" not in st:
                 r.err(where, f"{ch.solution_path} has no '## Quiz Answers' section")
     check_images(book, where, text, ch.sources, r)
+    check_note_references(where, text, r)
     check_refs(book, where, body, r)
+
+
+NOTE_REFERENCE = re.compile(r"\b(?:the|that|this) note (?:above|below|earlier)|\b(?:as|see) the note\b", re.I)
+
+
+def check_note_references(where: str, text: str, r: Report) -> None:
+    """Gap notes can be stripped from release builds, so body text must not point at notes."""
+    in_code = False
+    for line_no, line in enumerate(text.splitlines(), start=1):
+        if line.startswith("```"):
+            in_code = not in_code
+        elif not in_code and not line.startswith(">") and NOTE_REFERENCE.search(line):
+            r.warn(where, f"line {line_no} refers to a note ('{NOTE_REFERENCE.search(line).group(0)}'); "
+                          "gap notes may be left out of release builds, so restate the point instead")
 
 
 def check_images(book: Book, where: str, text: str, sids: list[str], r: Report) -> None:

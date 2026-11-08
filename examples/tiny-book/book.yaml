@@ -90,6 +90,6 @@ parts:
           (unknown bean, invalid config key, corrupt journal lines). The reader tunes their
           own defaults and sees how they change `brewlog add`. This is the only chapter that
           teaches configuration and precedence.
-        sources: [config]
+        sources: [config, interviews/ch03-configuration]
         prereqs: [1, 2]
         template: full

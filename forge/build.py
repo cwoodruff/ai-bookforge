@@ -11,6 +11,7 @@ from pathlib import Path
 
 import yaml
 
+from . import gaps
 from .config import Book, TOOL_ROOT
 
 FORMATS = ("epub", "html", "pdf")
@@ -191,14 +192,46 @@ def pandoc(book: Book, args: list[str]) -> None:
         print(proc.stderr.strip())
 
 
-def run(book: Book, formats: list[str]) -> list[Path]:
+GAP_MODES = ("keep", "strip", "fail")
+
+
+def apply_gap_mode(book: Book, files: list[str], mode: str) -> list[str]:
+    """keep: build as written. fail: refuse while gap notes remain. strip: build from copies without them."""
+    if mode not in GAP_MODES:
+        raise BuildError(f"unknown gaps mode '{mode}' (choose from {', '.join(GAP_MODES)})")
+    if mode == "keep":
+        return files
+    if mode == "fail":
+        found = gaps.collect(book)
+        if found:
+            total = sum(len(v) for v in found.values())
+            where = ", ".join(f"{label.split(':')[0]} ({len(v)})" for label, v in found.items())
+            raise BuildError(f"{total} source gap note(s) remain: {where}. Fill them (/interview, then /revise), "
+                             "or build with --gaps strip to leave them out. Details: python3 -m forge gaps")
+        return files
+    out, stripped = [], 0
+    for rel in files:
+        text = book.path(rel).read_text(encoding="utf-8")
+        cleaned, n = gaps.strip(text)
+        if n:
+            dest = book.path(f"build/final/{rel}")
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(cleaned, encoding="utf-8")
+            rel = str(dest.relative_to(book.root))
+            stripped += n
+        out.append(rel)
+    print(f"left out {stripped} source gap note(s)")
+    return out
+
+
+def run(book: Book, formats: list[str], gap_mode: str = "keep") -> list[Path]:
     for f in formats:
         if f not in FORMATS:
             raise BuildError(f"unknown format '{f}' (choose from {', '.join(FORMATS)})")
     generate(book)
+    files = apply_gap_mode(book, input_files(book), gap_mode)
     cov = cover(book)
     meta = metadata(book, cov)
-    files = input_files(book)
     dist = book.path("dist")
     dist.mkdir(exist_ok=True)
     common = [

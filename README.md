@@ -39,12 +39,21 @@ Then, inside Claude Code:
 | 1 | `/outline` | Inventories `sources/` and proposes parts, chapters, and which sources feed each chapter. **Stops for your review.** |
 | 2 | (you) | Edit the `parts:` section of `book.yaml` until the outline is right. |
 | 3 | `/write-all` | One writer agent per chapter, in parallel, each following its brief. Failing chapters are retried once. |
-| 3b | `/interview 2 5` | Optional: answers the gaps the writers flagged, then `/write 2 5` again. |
+| 3b | `/interview 2 5` | Optional: answers the gaps the writers flagged, then `/revise` folds the answers in. |
 | 4 | `/review` | A fact-checker agent compares each chapter against its sources and writes `build/reports/chNN-grounding.md`. |
 | 5 | `/edit` | Editor agents reconcile cross-references, terminology, and duplicated teaching, and apply the review fixes. |
-| 6 | `/build` | Runs every check, then writes `dist/<slug>.epub`, `.html`, and `.pdf`. |
+| 6 | `/build` | Runs every check, then writes `dist/<slug>.epub`, `.html`, and `.pdf`. Say "final" for a release build (see Publishing). |
 
-`/write 3 5-7` rewrites specific chapters. `make status` shows progress at any point.
+`make status` shows progress at any point.
+
+## Changing a chapter after it's written
+
+Use `/revise`, not `/write`. `/write 3` rewrites Chapter 3 from scratch and loses every edit made since (the editor's fixes, review fixes, and your own). `/revise` edits the chapter in place:
+
+- `/revise 3 "shorten Under the Hood and add an example of retries"` applies your instruction.
+- `/revise` with no arguments updates every **stale** chapter.
+
+A chapter goes stale when a source it was written from changes, or when a source is added to or removed from its list (for example by `/interview`). Each time a chapter is written, revised, or edited, `forge stamp` records the hash of every source it used in `.forge/state.json`; commit that file with your book. `make stale` lists stale chapters, and `/revise` hands each writer an exact diff of what changed in its sources, so it updates every affected value and leaves the rest alone. `make status` also tells you which chapters were edited by hand since they were last stamped.
 
 ## How you give it information
 
@@ -92,6 +101,7 @@ book/front/*.md         optional preface or foreword, placed before Chapter 1
 book/part-NN/chNN-*.md  chapters (written by agents)
 book/appendices/        agent-written appendices
 solutions/chNN.md       exercise solutions and quiz answers
+.forge/state.json       which source versions each chapter was written from (commit it)
 build/                  generated: inventory, manifest, briefs, reports, diagrams
 dist/                   the finished book
 ```
@@ -134,6 +144,18 @@ Word counts outside the target and code blocks without a language tag are warnin
 
 Writers are told that every specific fact (commands, options, numbers, versions, APIs) must come from their assigned sources, and that anything beyond them gets a `> **Note:**` callout. The `/review` step checks that independently and grades each chapter PASS, MINOR, or FAIL. Reviews are reports, not build failures. Read them before you publish.
 
+## Publishing
+
+While drafting, writers leave `> **Note:** The source material doesn't cover ...` callouts wherever your sources fall short. Those are useful to you and odd for readers, so release builds handle them explicitly:
+
+| Command | Gap notes |
+|---|---|
+| `make all` | Kept (draft) |
+| `make final` | The build fails while any remain, and lists where they are |
+| `make final GAPS=strip` | Left out of the published files; the manuscript keeps them |
+
+The usual route is to fill them: `make gaps`, then `/interview N`, then `/revise`, then `make final`. Also run `make stale` before a release.
+
 ## The technical-handson profile
 
 Each chapter has: What You'll Learn, concept sections, Hands-On, Quick Reference, Under the Hood, Pitfalls and Troubleshooting, Summary, Exercises, and Quiz. Opening chapters can use the `light` template, which drops the reference sections. Quiz answers are collected into an appendix automatically.
@@ -154,8 +176,11 @@ To customize, copy `profiles/technical-handson/` to `profiles/<name>/` (in this 
 | `make check` | `check [--chapter N] [--coverage]` | Run the deterministic checks |
 | `make status` | `status` | Show per-chapter state, word count, issues, and review status |
 | `make gaps` | `gaps [--chapter N]` | List every place a writer said the sources fall short |
+| `make stale` | `stale [--diff]` | List chapters whose sources changed; `--diff` writes `build/changes/chNN.md` |
+| `make stamp` | `stamp --all` or `--chapter N` | Record the sources each chapter was written from |
+| `make final` | `build --gaps fail` (or `strip`) | Release build that won't ship gap notes |
 | `make diagrams` | `diagrams [--chapter N]` | Render every Mermaid diagram to catch errors |
-| `make epub` / `html` / `pdf` / `all` | `build [formats] [--skip-check]` | Build into `dist/` |
+| `make epub` / `html` / `pdf` / `all` | `build [formats] [--skip-check] [--gaps keep\|strip\|fail]` | Build into `dist/` |
 | `make cover` | `cover` | Render the cover only |
 | `make links` | `links` | Check external links |
 | `make test` | | Run the unit tests |

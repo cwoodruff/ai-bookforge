@@ -15,7 +15,7 @@ NEGATION = re.compile(r"do(?:es)?n['’]t|do(?:es)? not|\bnot (?:cover|say|state
 
 
 def blockquotes(text: str):
-    """Yield (line number, joined text) for each blockquote outside code blocks."""
+    """Yield (first line, last line, joined text) for each blockquote outside code blocks (1-based)."""
     lines = text.splitlines()
     in_code, start, buf = False, None, []
     for i, line in enumerate(lines + [""], start=1):
@@ -26,16 +26,29 @@ def blockquotes(text: str):
                 start = i
             buf.append(line.lstrip(">").strip())
         elif start is not None:
-            yield start, " ".join(b for b in buf if b)
+            yield start, i - 1, " ".join(b for b in buf if b)
             start, buf = None, []
 
 
+def is_gap(quote: str) -> bool:
+    return quote.startswith("**Note:**") and bool(MENTIONS_SOURCES.search(quote)) and bool(NEGATION.search(quote))
+
+
 def find(text: str) -> list[tuple[int, str]]:
-    out = []
-    for line, quote in blockquotes(text):
-        if quote.startswith("**Note:**") and MENTIONS_SOURCES.search(quote) and NEGATION.search(quote):
-            out.append((line, quote.removeprefix("**Note:**").strip()))
-    return out
+    return [(start, quote.removeprefix("**Note:**").strip())
+            for start, _, quote in blockquotes(text) if is_gap(quote)]
+
+
+def strip(text: str) -> tuple[str, int]:
+    """Remove gap notes (and the blank line after each) for a published edition. Returns (text, count)."""
+    lines = text.splitlines(keepends=True)
+    drop = set()
+    for start, end, quote in blockquotes(text):
+        if is_gap(quote):
+            drop.update(range(start, end + 1))
+            if end < len(lines) and not lines[end].strip():
+                drop.add(end + 1)
+    return "".join(l for i, l in enumerate(lines, 1) if i not in drop), len([1 for s, e, q in blockquotes(text) if is_gap(q)])
 
 
 def collect(book: Book, chapter: int | None = None) -> dict:

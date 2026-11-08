@@ -4,10 +4,10 @@ This repo turns a folder of markdown source files into an AI-written book (EPUB,
 
 ## Layout
 
-- `forge/`: the Python tool (`python3 -m forge --book <folder> <command>`). Commands: `init`, `ingest`, `briefs`, `check`, `status`, `gaps`, `diagrams`, `build`, `cover`, `links`.
+- `forge/`: the Python tool (`python3 -m forge --book <folder> <command>`). Commands: `init`, `ingest`, `briefs`, `check`, `status`, `gaps`, `stale`, `stamp`, `diagrams`, `build`, `cover`, `links`.
 - `profiles/technical-handson/`: chapter rules (`rules.yaml`) and the templates rendered into `build/briefs/`.
 - `.claude/agents/`: `book-outliner`, `chapter-writer`, `grounding-reviewer`, `book-editor`.
-- `.claude/commands/`: `/interview`, `/outline`, `/write`, `/write-all`, `/review`, `/edit`, `/build`. `/interview` runs in the main conversation, never in a subagent.
+- `.claude/commands/`: `/interview`, `/outline`, `/write`, `/write-all`, `/revise`, `/review`, `/edit`, `/build`. `/interview` runs in the main conversation, never in a subagent.
 - `examples/tiny-book/`: a complete small book, used as the test fixture.
 - `tests/`: `python3 -m unittest discover -s tests`.
 
@@ -22,6 +22,7 @@ book/front/*.md      # optional front matter (preface, foreword), built first
 book/part-NN/chNN-*.md
 book/appendices/app-X-*.md
 solutions/chNN.md
+.forge/state.json    # source hashes per chapter at last write/revise/edit (committed)
 build/               # generated: inventory, manifest, briefs, reports, diagrams
 dist/                # generated: <slug>.epub / .html / .pdf
 ```
@@ -30,7 +31,7 @@ The book folder is the repo root by default; pass `--book examples/tiny-book` (o
 
 ## Workflow
 
-(`/interview kickoff` if there are no notes yet) → `/outline` → the author reviews and edits book.yaml → `/write-all` → (`/interview N` for flagged gaps, then `/write N`) → `/review` → `/edit` → `/build`.
+(`/interview kickoff` if there are no notes yet) → `/outline` → the author reviews and edits book.yaml → `/write-all` → (`/interview N` for flagged gaps, then `/revise`) → `/review` → `/edit` → `/build`.
 
 ## Rules when working on a book
 
@@ -39,6 +40,8 @@ The book folder is the repo root by default; pass `--book examples/tiny-book` (o
 - In an interview, record only what the author says; offer guesses only as questions they confirm.
 - Writing agents only write the files their brief says they own.
 - Don't edit `build/` by hand; it is regenerated.
+- Change existing chapters with `/revise`, never `/write`, unless the author asks for a rewrite. Stamp chapters after writing, revising, or editing them.
+- Release builds use `--gaps fail` (or `strip` if the author chooses).
 
 ## Rules when working on the tool
 

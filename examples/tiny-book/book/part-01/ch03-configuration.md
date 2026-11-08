@@ -59,7 +59,11 @@ The water temperature in Celsius used when you omit `--temp`. The default is `93
 
 Set `units` to `metric` or `imperial`. Imperial shows ounces and Fahrenheit, but Brewlog still stores grams and Celsius in `journal.jsonl`. That design keeps the journal consistent: switching units changes how brews are displayed, never what is saved, so you can flip back and forth without converting anything.
 
-> **Note:** The source material doesn't say whether `--dose`, `--water`, and `--temp` accept imperial values when `units = "imperial"`, or whether `default_temp` is read as Fahrenheit in that mode. The sources describe all three in grams and Celsius, so keep entering grams and Celsius.
+It only changes how `brewlog list` and `brewlog best` display numbers. Everything else stays in grams and Celsius:
+
+- On the command line, you still type grams and Celsius for `--dose`, `--water`, and `--temp`, even with `units = "imperial"`.
+- `brewlog export` always writes grams and Celsius, whatever `units` says.
+- `default_temp` stays in Celsius too.
 
 ### rating_scale
 
@@ -72,13 +76,15 @@ Brewlog recognizes two environment variables.
 | Variable | Effect |
 |---|---|
 | `BREWLOG_JOURNAL` | Overrides the journal folder, the same as `--journal`. The command-line option wins if both are set. |
-| `NO_COLOR` | Turns off colored output. |
+| `NO_COLOR` | Turns off colored output when set to any non-empty value. |
 
 `BREWLOG_JOURNAL` is useful when you want a different journal for a whole terminal session without adding `--journal` to every command. Because `config.toml` lives inside the journal folder, changing the journal folder also changes which `config.toml` is read. There is no config key for the journal location; you choose it only with `--journal` or `BREWLOG_JOURNAL`.
 
-`NO_COLOR` is handy when you pipe output into another program or a log file, where color codes only add noise.
+`NO_COLOR` is handy when you pipe output into a program or a log file. If `NO_COLOR` is set to anything that isn't empty, Brewlog prints plain text with no colors. Setting it to an empty string does nothing.
 
-> **Note:** The source material doesn't say what value `NO_COLOR` needs. The examples in this chapter set it to `1`.
+```bash
+NO_COLOR=1 brewlog list
+```
 
 ## Precedence: Who Wins
 
@@ -172,7 +178,7 @@ Expected result: the first command prints your recent brews without color. The l
 | `default_method` | Method used when `--method` is omitted | `"v60"` |
 | `default_ratio` | Water-to-coffee ratio used when `--water` is omitted | `16` |
 | `default_temp` | Celsius, used when `--temp` is omitted | `93` |
-| `units` | `metric` or `imperial` | `"metric"` |
+| `units` | `metric` or `imperial`; affects `list` and `best` display only | `"metric"` |
 | `rating_scale` | Fixed at 5; other values are rejected | `5` |
 
 **Environment variables:**
@@ -180,7 +186,7 @@ Expected result: the first command prints your recent brews without color. The l
 | Variable | Effect |
 |---|---|
 | `BREWLOG_JOURNAL` | Sets the journal folder; `--journal` wins if both are set |
-| `NO_COLOR` | Turns off colored output |
+| `NO_COLOR` | Any non-empty value turns off colored output; an empty string does nothing |
 
 **Precedence** (first value found wins): command-line option, environment variable (where one exists), `config.toml`, built-in default.
 
@@ -218,7 +224,7 @@ First, because defaults are filled in before the line is appended, the filled-in
 
 Second, the journal is append-only: edits add a new revision rather than rewriting a line. Separately, Brewlog copes with a damaged line by skipping it, warning you with its line number, and loading the rest.
 
-The `units` setting sits entirely on the display side. The journal always holds grams and Celsius, and imperial mode converts only what you see.
+The `units` setting sits entirely on the display side. Input on the command line, the journal, and exports are all grams and Celsius; imperial mode converts only what `brewlog list` and `brewlog best` show you.
 
 ## Pitfalls and Troubleshooting
 
@@ -279,7 +285,7 @@ Key takeaways:
 - Brewlog reads `config.toml` from the journal folder; every key is optional.
 - Built-in defaults: `default_method = "v60"`, `default_ratio = 16`, `default_temp = 93`, `units = "metric"`, `rating_scale = 5`.
 - Without `--water`, water is `dose * default_ratio`.
-- Imperial units change the display only; the journal always stores grams and Celsius.
+- Imperial units change only how `brewlog list` and `brewlog best` display numbers; you still type grams and Celsius, and the journal and exports always use grams and Celsius.
 - Precedence: command-line option, environment variable, `config.toml`, built-in default.
 - Defaults are filled in before a brew is appended, so changing them later shouldn't alter past brews.
 
@@ -291,6 +297,7 @@ Key takeaways:
 4. You set `BREWLOG_JOURNAL=~/espresso-journal` and run `brewlog list --journal ~/.brewlog/`. Which journal is listed, and which `config.toml` applies?
 5. A friend's config contains `default_tmp = 92` and Brewlog stops on startup. Diagnose the problem and give the fix.
 6. Explain why switching `units` from `metric` to `imperial` and back never changes your journal data.
+7. With `units = "imperial"`, you want to log a brew at 200 degrees Fahrenheit. What do you pass to `--temp`, and what unit does `brewlog export` use for that brew?
 
 ## Quiz
 
@@ -302,6 +309,6 @@ Key takeaways:
    c. Environment variable, command-line option, built-in default, `config.toml`
 4. What happens if you set `rating_scale = 10`?
 5. True or false: with `units = "imperial"`, Brewlog stores ounces and Fahrenheit in `journal.jsonl`.
-6. Which environment variable turns off colored output?
+6. Which environment variable turns off colored output, and does `NO_COLOR=` (an empty string) turn it off?
 7. What does Brewlog do when it finds a corrupt line in `journal.jsonl`?
 8. You get "unknown bean" for a bean you are sure you registered. What should you check first?

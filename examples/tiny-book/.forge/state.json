@@ -1,0 +1,29 @@
+{
+  "chapters": {
+    "ch01": {
+      "chapter_sha1": "ae4f552b24c60afa76d25de1dd2ca4069a72a4d7",
+      "sources": {
+        "overview": "68f11218c0db550e8963ace63825b8e7c767d042"
+      },
+      "stamped": "2026-11-08T02:15:44Z",
+      "title": "Getting Started with Brewlog"
+    },
+    "ch02": {
+      "chapter_sha1": "edbcd9ed115d4f0c4812beb149dde0b6e56d293b",
+      "sources": {
+        "commands": "a1233e8539f9abb5e912ac2e4f73a26fe80e3c16"
+      },
+      "stamped": "2026-11-08T02:20:00Z",
+      "title": "Logging and Comparing Brews"
+    },
+    "ch03": {
+      "chapter_sha1": "e7cc03d8b9fd5f8f4ce8fb320162d94793852459",
+      "sources": {
+        "config": "22df83b5e457954cb4707071ef45893707014507",
+        "interviews/ch03-configuration": "2ab642da7842ec7e601c9580f22fcc4460f4a517"
+      },
+      "stamped": "2026-11-08T02:18:12Z",
+      "title": "Configuring and Troubleshooting Brewlog"
+    }
+  }
+}

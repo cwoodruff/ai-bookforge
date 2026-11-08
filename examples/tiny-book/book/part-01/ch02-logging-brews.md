@@ -197,7 +197,7 @@ brewlog list --bean "Ethiopia Guji" --method v60 --last 7
 
 Expected result: seven brews, with day 7 at the top and day 1 at the bottom.
 
-**Step 7: Fix a rating.** Suppose day 6 tasted better after it cooled. Edit it by its id. As the Note in "Correcting a Brew with `brewlog edit`" says, the sources don't say where Brewlog shows a brew's id, so check your `list` output for it. The command below uses `42` as a stand-in for that id:
+**Step 7: Fix a rating.** Suppose day 6 tasted better after it cooled. Edit it by its id. This book can't tell you where Brewlog displays a brew's id, so check your `list` output for it. The command below uses `42` as a stand-in for that id:
 
 ```bash
 brewlog edit 42 --rating 5 --note "sweeter after resting the beans"

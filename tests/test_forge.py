@@ -9,7 +9,7 @@ from pathlib import Path
 
 import yaml
 
-from forge import briefs, build, checks, gaps, ingest
+from forge import briefs, build, checks, gaps, ingest, state
 from forge.config import Book, ConfigError, TOOL_ROOT, slugify
 
 EXAMPLE = TOOL_ROOT / "examples" / "tiny-book"
@@ -186,6 +186,11 @@ class ChapterCheckTests(TempBook):
         self.assertTrue(any("Chapter 9" in e for e in errs))
         self.assertTrue(any("Appendix Z" in e for e in errs))
 
+    def test_reference_to_a_note_warns(self):
+        write_chapter(self.tmp, CHAPTER.replace("Done.", "As the note above says, it varies.\n\nThe note in the picture is fine."))
+        warns = checks.run(Book(self.tmp)).warnings
+        self.assertEqual(len([w for w in warns if "refers to a note" in w]), 1)
+
     def test_missing_quiz_answers(self):
         write_chapter(self.tmp, solution="# Chapter 1 Solutions\n\n## Exercise Solutions\n")
         self.assertTrue(any("Quiz Answers" in e for e in self.errors()))
@@ -289,6 +294,92 @@ class GapTests(unittest.TestCase):
             self.assertTrue((dest / "build/gaps.md").exists())
         finally:
             shutil.rmtree(tmp)
+
+
+class StateTests(TempBook):
+    def setUp(self):
+        super().setUp()
+        make_book(self.tmp, sources=("intro", "extra"),
+                  chapters=[{"title": "Intro", "slug": "intro", "sources": ["intro"], "template": "light"}],
+                  extra={"exclude_sources": ["extra"]})
+        write_chapter(self.tmp)
+        self.book = Book(self.tmp)
+
+    def test_unstamped_chapter_is_not_stale(self):
+        self.assertEqual(state.stale(self.book), {})
+        self.assertFalse(state.check(self.book, self.book.chapter(1))["stamped"])
+
+    def test_stamp_then_unchanged_is_current(self):
+        self.assertEqual(state.stamp(self.book, None), [1])
+        self.assertTrue((self.tmp / ".forge/state.json").exists())
+        self.assertEqual(state.stale(self.book), {})
+
+    def test_changed_source_is_stale_with_diff(self):
+        state.stamp(self.book, None)
+        src = self.tmp / "sources/intro.md"
+        src.write_text(src.read_text().replace("Some words", "Different words"))
+        stale = state.stale(self.book)
+        self.assertEqual(stale[1]["changed"], ["intro"])
+        changes = state.write_changes(self.book, self.book.chapter(1)).read_text()
+        self.assertIn("-Some words about intro.", changes)
+        self.assertIn("+Different words about intro.", changes)
+
+    def test_added_and_removed_sources_are_stale(self):
+        state.stamp(self.book, None)
+        data = yaml.safe_load((self.tmp / "book.yaml").read_text())
+        data["parts"][0]["chapters"][0]["sources"] = ["extra"]
+        data["exclude_sources"] = ["intro"]
+        (self.tmp / "book.yaml").write_text(yaml.safe_dump(data))
+        r = state.stale(Book(self.tmp))[1]
+        self.assertEqual((r["added"], r["removed"]), (["extra"], ["intro"]))
+
+    def test_hand_edit_is_reported_not_stale(self):
+        state.stamp(self.book, None)
+        ch = self.tmp / "book/part-01/ch01-intro.md"
+        ch.write_text(ch.read_text() + "\nMore.\n")
+        r = state.check(self.book, self.book.chapter(1))
+        self.assertTrue(r["edited"])
+        self.assertEqual(r["stale"], [])
+
+    def test_restamp_clears_staleness(self):
+        state.stamp(self.book, None)
+        src = self.tmp / "sources/intro.md"
+        src.write_text("# Intro\n\nNew text.\n")
+        state.stamp(self.book, [1])
+        self.assertEqual(state.stale(self.book), {})
+
+
+GAP_CHAPTER = CHAPTER.replace("## Hands-On", "> **Note:** The source material doesn't cover the port.\n> It may vary.\n\nKeep this line.\n\n## Hands-On")
+
+
+class GapModeTests(TempBook):
+    def setUp(self):
+        super().setUp()
+        make_book(self.tmp)
+        write_chapter(self.tmp, GAP_CHAPTER)
+        self.book = Book(self.tmp)
+        self.files = ["book/part-01/ch01-intro.md"]
+
+    def test_strip_removes_note_only(self):
+        cleaned, n = gaps.strip(GAP_CHAPTER)
+        self.assertEqual(n, 1)
+        self.assertNotIn("doesn't cover the port", cleaned)
+        self.assertNotIn("It may vary", cleaned)
+        self.assertIn("Keep this line.", cleaned)
+        self.assertIn("> **Prerequisites:** None.", cleaned)
+
+    def test_strip_mode_builds_from_copies(self):
+        out = build.apply_gap_mode(self.book, self.files, "strip")
+        self.assertEqual(out, ["build/final/book/part-01/ch01-intro.md"])
+        self.assertIn("doesn't cover", (self.tmp / self.files[0]).read_text())  # manuscript untouched
+        self.assertNotIn("doesn't cover", (self.tmp / out[0]).read_text())
+
+    def test_fail_mode_refuses(self):
+        with self.assertRaises(build.BuildError):
+            build.apply_gap_mode(self.book, self.files, "fail")
+
+    def test_keep_mode_is_a_no_op(self):
+        self.assertEqual(build.apply_gap_mode(self.book, self.files, "keep"), self.files)
 
 
 class ExampleBookTests(unittest.TestCase):
